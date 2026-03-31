@@ -1,0 +1,19 @@
+# Build
+target/
+node_modules/
+__pycache__/
+*.pyc
+dist/
+
+# Secrets - CRITICAL for bots!
+.env
+.env.*
+!.env.example
+*.key
+bot_token.txt
+token.json
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
