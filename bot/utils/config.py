@@ -15,6 +15,8 @@ class Config:
     bot_token: str
     admin_id: int
     deepgram_api_key: str
+    google_oauth_client_json: str | None
+    google_oauth_token_json: str | None
     google_service_account_file: str
     google_drive_parent_id: str | None
     google_shared_drive_id: str | None
@@ -51,6 +53,8 @@ def load_config() -> Config:
         bot_token=require("BOT_TOKEN"),
         admin_id=require_int("ADMIN_ID"),
         deepgram_api_key=require("DEEPGRAM_API_KEY"),
+        google_oauth_client_json=os.getenv("GOOGLE_OAUTH_CLIENT_JSON"),
+        google_oauth_token_json=os.getenv("GOOGLE_OAUTH_TOKEN_JSON"),
         google_service_account_file=google_service_account_file,
         google_drive_parent_id=os.getenv("GOOGLE_DRIVE_PARENT_ID"),
         google_shared_drive_id=os.getenv("GOOGLE_SHARED_DRIVE_ID"),

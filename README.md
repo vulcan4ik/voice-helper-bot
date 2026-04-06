@@ -47,6 +47,8 @@ python -m bot.main
 - `GOOGLE_SHARED_DRIVE_ID` (опционально)
 - `GOOGLE_OAUTH_CLIENT_FILE` (опционально, для OAuth)
 - `GOOGLE_OAUTH_TOKEN_FILE` (опционально, для OAuth)
+- `GOOGLE_OAUTH_CLIENT_JSON` (опционально, для OAuth через env)
+- `GOOGLE_OAUTH_TOKEN_JSON` (опционально, для OAuth через env)
 
 Если используешь OAuth, один раз сгенерируй токен:
 ```bash

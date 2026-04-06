@@ -165,9 +165,12 @@ def _build_credentials(config: Config, scopes: list[str]) -> Credentials:
     """Create Google credentials using OAuth or service account."""
 
     if config.google_oauth_client_file:
+        token_file = _resolve_token_file(config)
+        if config.google_oauth_client_json or config.google_oauth_token_json:
+            _ensure_oauth_files(config, token_file)
         return _load_oauth_credentials(
             client_file=Path(config.google_oauth_client_file),
-            token_file=_resolve_token_file(config),
+            token_file=token_file,
             scopes=scopes,
         )
 
@@ -187,6 +190,19 @@ def _resolve_token_file(config: Config) -> Path:
         return Path(config.google_oauth_client_file).with_name("token.json")
 
     return Path("token.json")
+
+
+def _ensure_oauth_files(config: Config, token_file: Path) -> None:
+    """Write OAuth client/token JSON to disk when provided via env."""
+
+    if config.google_oauth_client_json:
+        client_path = Path(config.google_oauth_client_file)
+        client_path.parent.mkdir(parents=True, exist_ok=True)
+        client_path.write_text(config.google_oauth_client_json, encoding="utf-8")
+
+    if config.google_oauth_token_json:
+        token_file.parent.mkdir(parents=True, exist_ok=True)
+        token_file.write_text(config.google_oauth_token_json, encoding="utf-8")
 
 
 def _load_oauth_credentials(
