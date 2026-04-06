@@ -36,6 +36,7 @@ def main() -> None:
         MessageHandler(filters.VOICE | filters.AUDIO, media_handler)
     )
     application.add_handler(CallbackQueryHandler(save_callback_handler, pattern=r"^save:"))
+    application.add_handler(CallbackQueryHandler(save_callback_handler, pattern=r"^show:"))
 
     application.run_polling(allowed_updates=["message", "callback_query"])
 

@@ -197,10 +197,11 @@ def _ensure_oauth_files(config: Config, token_file: Path) -> None:
 
     if config.google_oauth_client_json:
         client_path = Path(config.google_oauth_client_file)
-        client_path.parent.mkdir(parents=True, exist_ok=True)
-        client_path.write_text(config.google_oauth_client_json, encoding="utf-8")
+        if not client_path.exists():
+            client_path.parent.mkdir(parents=True, exist_ok=True)
+            client_path.write_text(config.google_oauth_client_json, encoding="utf-8")
 
-    if config.google_oauth_token_json:
+    if config.google_oauth_token_json and not token_file.exists():
         token_file.parent.mkdir(parents=True, exist_ok=True)
         token_file.write_text(config.google_oauth_token_json, encoding="utf-8")
 
