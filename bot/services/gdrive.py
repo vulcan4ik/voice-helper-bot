@@ -114,6 +114,9 @@ def _save_note_sync(
 def describe_drive_error(error: Exception) -> str | None:
     """Return a human-friendly Drive error message when possible."""
 
+    if isinstance(error, RuntimeError):
+        return str(error)
+
     if not isinstance(error, HttpError):
         return None
 

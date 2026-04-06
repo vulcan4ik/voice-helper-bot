@@ -40,6 +40,7 @@ python -m bot.main
 
 ## 🔐 Переменные окружения
 - `BOT_TOKEN`
+- `ADMIN_ID`
 - `DEEPGRAM_API_KEY`
 - `GOOGLE_SERVICE_ACCOUNT_FILE`
 - `GOOGLE_DRIVE_PARENT_ID` (опционально)

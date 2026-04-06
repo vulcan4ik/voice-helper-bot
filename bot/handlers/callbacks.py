@@ -5,9 +5,11 @@ from __future__ import annotations
 import logging
 
 from telegram import Update
+from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
 from bot.models.voice_note import VoiceNote
+from bot.services.access import is_allowed_user
 from bot.services import gdrive
 from bot.utils.config import Config
 from bot.utils.text import chunk_text
@@ -30,6 +32,12 @@ async def save_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
     if query is None:
         return
 
+    config: Config = context.application.bot_data["config"]
+    user_id = update.effective_user.id if update.effective_user else None
+    if not is_allowed_user(user_id, config.admin_id):
+        await query.answer("Доступ к боту ограничен.", show_alert=True)
+        return
+
     await query.answer()
 
     note: VoiceNote | None = context.user_data.get("last_note")
@@ -44,13 +52,16 @@ async def save_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
                 await query.message.reply_text(chunk)
             elif chat_id is not None:
                 await context.bot.send_message(chat_id=chat_id, text=chunk)
-        await query.edit_message_text(
-            "Полный текст отправлен. Можно сохранить файл.",
-            reply_markup=build_save_keyboard(show_full=_should_show_full(note)),
-        )
+        try:
+            await query.edit_message_text(
+                "Полный текст отправлен. Можно сохранить файл.",
+                reply_markup=build_save_keyboard(show_full=_should_show_full(note)),
+            )
+        except BadRequest as exc:
+            if "Message is not modified" not in str(exc):
+                raise
         return
 
-    config: Config = context.application.bot_data["config"]
     data = query.data or ""
     save_audio = data in {"save:audio", "save:audio:txt"}
     if data in {"save:txt", "save:text", "save:audio:txt"}:
@@ -60,14 +71,23 @@ async def save_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
 
     try:
         link = await gdrive.save_note(note, save_audio, config, text_format)
-        await query.edit_message_text(
-            f"Сохранено: {link}\n\nМожно выбрать другой вариант сохранения.",
-            reply_markup=build_save_keyboard(show_full=_should_show_full(note)),
-        )
+        try:
+            await query.edit_message_text(
+                f"Сохранено: {link}\n\nМожно выбрать другой вариант сохранения.",
+                reply_markup=build_save_keyboard(show_full=_should_show_full(note)),
+            )
+        except BadRequest as exc:
+            if "Message is not modified" not in str(exc):
+                raise
     except Exception as exc:
         logger.exception("Failed to save note: %s", exc)
         message = gdrive.describe_drive_error(exc)
-        await query.edit_message_text(
-            message or "Не удалось сохранить файл в Google Drive. Проверь настройки.",
-            reply_markup=build_save_keyboard(show_full=_should_show_full(note)),
-        )
+        try:
+            await query.edit_message_text(
+                message
+                or "Не удалось сохранить файл в Google Drive. Проверь настройки.",
+                reply_markup=build_save_keyboard(show_full=_should_show_full(note)),
+            )
+        except BadRequest as exc:
+            if "Message is not modified" not in str(exc):
+                raise

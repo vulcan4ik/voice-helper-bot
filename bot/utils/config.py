@@ -13,6 +13,7 @@ class Config:
     """Typed configuration loaded from environment variables."""
 
     bot_token: str
+    admin_id: int
     deepgram_api_key: str
     google_service_account_file: str
     google_drive_parent_id: str | None
@@ -33,6 +34,13 @@ def load_config() -> Config:
             raise ValueError(f"Missing required environment variable: {name}")
         return value
 
+    def require_int(name: str) -> int:
+        value = require(name)
+        try:
+            return int(value)
+        except ValueError as exc:
+            raise ValueError(f"{name} must be an integer") from exc
+
     google_oauth_client_file = os.getenv("GOOGLE_OAUTH_CLIENT_FILE") or None
     if google_oauth_client_file:
         google_service_account_file = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "")
@@ -41,6 +49,7 @@ def load_config() -> Config:
 
     return Config(
         bot_token=require("BOT_TOKEN"),
+        admin_id=require_int("ADMIN_ID"),
         deepgram_api_key=require("DEEPGRAM_API_KEY"),
         google_service_account_file=google_service_account_file,
         google_drive_parent_id=os.getenv("GOOGLE_DRIVE_PARENT_ID"),

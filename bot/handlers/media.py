@@ -12,6 +12,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from bot.models.voice_note import VoiceNote
+from bot.services.access import is_allowed_user
 from bot.services import deepgram
 from bot.utils.config import Config
 from bot.utils.text import make_preview
@@ -76,6 +77,10 @@ async def media_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
 
     config: Config = context.application.bot_data["config"]
+    user_id = update.effective_user.id if update.effective_user else None
+    if not is_allowed_user(user_id, config.admin_id):
+        await message.reply_text("Доступ к боту ограничен.")
+        return
 
     try:
         telegram_file = await context.bot.get_file(audio.file_id)
