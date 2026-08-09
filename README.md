@@ -9,6 +9,7 @@
 - Сохранение в Google Drive: TXT или MD, с/без аудио.
 - Для длинных текстов: превью + кнопка «Показать полностью».
 - Кнопки сохранения остаются доступными после операции.
+- Доступ к боту ограничен по `ADMIN_ID`.
 
 ---
 
@@ -55,6 +56,16 @@ python -m bot.main
 python scripts/google_oauth.py
 ```
 
+### Railway (OAuth через env)
+Если в деплое нет файлового доступа, можно передать JSON через env и записать их при старте:
+
+```
+GOOGLE_OAUTH_CLIENT_FILE=/app/credentials/client_secret.json
+GOOGLE_OAUTH_TOKEN_FILE=/app/credentials/token.json
+GOOGLE_OAUTH_CLIENT_JSON=<весь JSON клиента>
+GOOGLE_OAUTH_TOKEN_JSON=<весь JSON токена>
+```
+
 ---
 
 ## 🧪 Тесты
@@ -75,11 +86,16 @@ pytest tests/
 ## 📂 Структура проекта
 ```text
 bot/
-  handlers/
-  services/
-  models/
-  utils/
-tests/
-docs/
-scripts/
+  handlers/        # Telegram handlers (команды, callback, медиа)
+  services/        # Бизнес-логика (Deepgram, Google Drive)
+  models/          # Датаклассы и модели
+  utils/           # Хелперы, конфиг, UI-клавиатуры
+docs/              # Контекст проекта и правила
+scripts/           # Вспомогательные скрипты (OAuth, утилиты)
+tests/             # Тесты
 ```
+
+
+
+### Скрипты
+- `scripts/google_oauth.py` — генерация OAuth токена для Google Drive

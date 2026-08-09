@@ -24,6 +24,7 @@ Telegram-бот для транскрибации голосовых сообщ�
 
 ## Деплой
 - Railway
+- Fly.io (Dockerfile + fly.toml, polling, без HTTP-порта)
 - OAuth файлы могут писаться из env в /app/credentials
 
 ## Правила

@@ -1,0 +1,26 @@
+# Секреты — никогда не должны попасть в образ.
+.env
+.env.*
+!.env.example
+token.json
+client_secret_*.json
+*.key
+
+# VCS и кэши.
+.git
+.gitignore
+.gitattributes
+__pycache__/
+*.pyc
+.pytest_cache/
+.python-version
+.vscode/
+.idea/
+
+# Локальные конфиги и документация для разработки.
+.opencode/
+docs/
+tests/
+scripts/
+deploy_render.md
+deploy_fly.md
