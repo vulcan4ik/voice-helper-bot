@@ -24,3 +24,4 @@ tests/
 scripts/
 deploy_render.md
 deploy_fly.md
+deploy_gcp.md

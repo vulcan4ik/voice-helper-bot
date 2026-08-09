@@ -9,4 +9,4 @@
 - [x] Оставлять кнопки доступными после сохранения
 - [x] Ограничить доступ по ADMIN_ID
 - [x] Добавить OAuth JSON из env для Railway
-- [x] Подготовить деплой на Fly.io (Dockerfile, fly.toml, entrypoint.sh)
+- [x] Подготовить деплой на VM через Docker Compose (Dockerfile, docker-compose.yml, entrypoint.sh)

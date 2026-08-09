@@ -1,0 +1,8 @@
+# Запуск бота на VM (Google Cloud) через Docker Compose.
+# Использует существующий Dockerfile. Образ пересобирается при изменении кода.
+services:
+  voice-helper-bot:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
