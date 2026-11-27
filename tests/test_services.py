@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 from bot.models.voice_note import VoiceNote
-from bot.services.deepgram import extract_transcript
+from bot.services.deepgram import extract_transcript, _render_speakers
 from bot.services.gdrive import build_document
 
 
@@ -16,6 +16,40 @@ def test_extract_transcript_ok() -> None:
     }
 
     assert extract_transcript(payload) == "Привет мир"
+
+
+def test_extract_transcript_with_speakers() -> None:
+    payload = {
+        "results": {
+            "channels": [
+                {"alternatives": [{"transcript": "Привет Как дела"}]}
+            ],
+            "utterances": [
+                {"speaker": 0, "transcript": "Привет"},
+                {"speaker": 1, "transcript": "Как дела"},
+            ],
+        }
+    }
+
+    assert extract_transcript(payload) == "Спикер 1: Привет\nСпикер 2: Как дела"
+
+
+def test_render_speakers_merges_same_speaker() -> None:
+    utterances = [
+        {"speaker": 0, "transcript": "Привет"},
+        {"speaker": 0, "transcript": "друг"},
+        {"speaker": 1, "transcript": "Привет"},
+    ]
+
+    assert _render_speakers(utterances) == "Спикер 1: Привет друг\nСпикер 2: Привет"
+
+
+def test_render_speakers_without_speaker_info() -> None:
+    utterances = [
+        {"speaker": None, "transcript": "Просто текст"},
+    ]
+
+    assert _render_speakers(utterances) == "Спикер: Просто текст"
 
 
 def test_build_markdown_with_audio() -> None:

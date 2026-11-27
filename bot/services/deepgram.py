@@ -14,14 +14,54 @@ logger = logging.getLogger(__name__)
 
 
 def extract_transcript(payload: dict[str, Any]) -> str:
-    """Extract the transcript from Deepgram response payload."""
+    """Extract the transcript, labeling speakers when Deepgram reports them."""
 
     try:
         channels = payload["results"]["channels"]
         alternatives = channels[0]["alternatives"]
-        return alternatives[0]["transcript"].strip()
+        transcript = alternatives[0]["transcript"].strip()
     except (KeyError, IndexError, TypeError) as exc:
         raise ValueError("Unexpected Deepgram response format") from exc
+
+    utterances = payload.get("results", {}).get("utterances") or []
+    labeled = _render_speakers(utterances)
+    return labeled or transcript
+
+
+def _render_speakers(utterances: list[dict[str, Any]]) -> str:
+    """Join utterances into 'Спикер N: text' lines, merging same-speaker rows."""
+
+    lines: list[str] = []
+    current_speaker: Any = None
+    current_text = ""
+
+    for utterance in utterances:
+        speaker = utterance.get("speaker")
+        text = (utterance.get("transcript") or "").strip()
+        if not text:
+            continue
+
+        if speaker != current_speaker and current_text:
+            lines.append(f"{_speaker_label(current_speaker)}: {current_text}")
+            current_text = text
+        elif speaker == current_speaker:
+            current_text = f"{current_text} {text}".strip()
+        else:
+            current_text = text
+        current_speaker = speaker
+
+    if current_text:
+        lines.append(f"{_speaker_label(current_speaker)}: {current_text}")
+
+    return "\n".join(lines)
+
+
+def _speaker_label(speaker: Any) -> str:
+    """Human-friendly speaker name; Deepgram numbers speakers from 0."""
+
+    if isinstance(speaker, int):
+        return f"Спикер {speaker + 1}"
+    return "Спикер"
 
 
 async def transcribe_file(file_path: Path, mime_type: str, api_key: str) -> str:
@@ -38,6 +78,10 @@ async def transcribe_file(file_path: Path, mime_type: str, api_key: str) -> str:
         "model": "nova-3",
         "smart_format": "true",
         "language": "ru",
+        # Speaker diarization: label who is talking.
+        "diarize": "true",
+        # Split into utterances so we can tell which speaker said what.
+        "utterances": "true",
     }
 
     # 180s: long voice notes take a while to transcribe on Deepgram's side.
