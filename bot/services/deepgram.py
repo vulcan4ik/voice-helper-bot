@@ -40,7 +40,8 @@ async def transcribe_file(file_path: Path, mime_type: str, api_key: str) -> str:
         "language": "ru",
     }
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    # 180s: long voice notes take a while to transcribe on Deepgram's side.
+    async with httpx.AsyncClient(timeout=180.0) as client:
         response = await client.post(
             "https://api.deepgram.com/v1/listen",
             headers=headers,

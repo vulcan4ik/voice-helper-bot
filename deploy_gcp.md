@@ -62,6 +62,7 @@ nano .env   # вставить строки выше и сохранить
 ## 5) Запустить бота
 
 ```bash
+mkdir -p credentials   # папка для OAuth-файлов (токен переживает пересоздание контейнера)
 docker compose up -d --build
 docker compose logs -f
 ```

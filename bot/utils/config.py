@@ -22,6 +22,10 @@ class Config:
     google_shared_drive_id: str | None
     google_oauth_client_file: str | None
     google_oauth_token_file: str | None
+    # LLM для конспекта бесед: опциональные, без ключа /end просто не работает.
+    llm_api_key: str | None
+    llm_base_url: str
+    llm_model: str
 
 
 def load_config() -> Config:
@@ -60,4 +64,7 @@ def load_config() -> Config:
         google_shared_drive_id=os.getenv("GOOGLE_SHARED_DRIVE_ID"),
         google_oauth_client_file=google_oauth_client_file,
         google_oauth_token_file=os.getenv("GOOGLE_OAUTH_TOKEN_FILE") or None,
+        llm_api_key=os.getenv("LLM_API_KEY"),
+        llm_base_url=os.getenv("LLM_BASE_URL", "https://api.openai.com/v1"),
+        llm_model=os.getenv("LLM_MODEL", "gpt-4o-mini"),
     )
