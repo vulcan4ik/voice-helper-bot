@@ -67,6 +67,49 @@ async def save_note(
     )
 
 
+async def save_text_note(
+    text: str,
+    config: Config,
+    text_format: TextFormat = "md",
+) -> str:
+    """Save a plain text note (e.g. dialogue conspect) to Drive and return a link."""
+
+    return await asyncio.to_thread(_save_text_note_sync, text, config, text_format)
+
+
+def _save_text_note_sync(text: str, config: Config, text_format: TextFormat) -> str:
+    """Blocking Google Drive calls for text-only notes."""
+
+    scopes = ["https://www.googleapis.com/auth/drive.file"]
+    credentials = _build_credentials(config, scopes)
+    service = build(
+        "drive",
+        "v3",
+        credentials=credentials,
+        cache_discovery=False,
+    )
+
+    folder_id = _get_or_create_date_folder(
+        service=service,
+        date=datetime.now(),
+        parent_id=config.google_drive_parent_id,
+        shared_drive_id=config.google_shared_drive_id,
+    )
+
+    suffix = "txt" if text_format == "txt" else "md"
+    filename = datetime.now().strftime(f"conspect-%Y%m%d-%H%M%S.{suffix}")
+    mime_type = "text/plain" if text_format == "txt" else "text/markdown"
+    text_id = _upload_text(
+        service=service,
+        folder_id=folder_id,
+        filename=filename,
+        content=text,
+        mime_type=mime_type,
+    )
+
+    return f"https://drive.google.com/file/d/{text_id}/view"
+
+
 def _save_note_sync(
     note: VoiceNote,
     save_audio: bool,

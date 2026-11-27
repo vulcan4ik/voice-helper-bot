@@ -6,3 +6,6 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    volumes:
+      # OAuth-файлы (токен) переживают пересоздание контейнера.
+      - ./credentials:/app/credentials

@@ -40,6 +40,31 @@ async def save_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
 
     await query.answer()
 
+    data = query.data or ""
+
+    # Saving the dialogue conspect (buttons after /end).
+    if data.startswith("savecons:"):
+        conspect: str | None = context.chat_data.get("last_conspect")
+        if not conspect:
+            await query.edit_message_text("Конспект не найден. Собери новый через /end.")
+            return
+        text_format = "txt" if data.endswith(":txt") else "md"
+        try:
+            link = await gdrive.save_text_note(conspect, config, text_format)
+            try:
+                await query.edit_message_text(f"Конспект сохранён: {link}")
+            except BadRequest as exc:
+                if "Message is not modified" not in str(exc):
+                    raise
+        except Exception as exc:
+            logger.exception("Failed to save conspect: %s", exc)
+            message = gdrive.describe_drive_error(exc)
+            await query.edit_message_text(
+                message
+                or "Не удалось сохранить конспект в Google Drive. Проверь настройки."
+            )
+        return
+
     note: VoiceNote | None = context.user_data.get("last_note")
     if note is None:
         await query.edit_message_text("Нет данных для сохранения. Отправь новое аудио.")
@@ -62,7 +87,6 @@ async def save_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
                 raise
         return
 
-    data = query.data or ""
     save_audio = data in {"save:audio", "save:audio:txt"}
     if data in {"save:txt", "save:text", "save:audio:txt"}:
         text_format = "txt"

@@ -1,4 +1,4 @@
-# Лёгкий образ Python 3.11 для деплоя на Fly.io.
+# Лёгкий образ Python 3.11 для деплоя (Google Cloud VM / Render).
 FROM python:3.11-slim
 
 # Рабочая директория внутри контейнера.

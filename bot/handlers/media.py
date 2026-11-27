@@ -32,30 +32,6 @@ MIME_BY_SUFFIX = {
 TELEGRAM_SAFE_LIMIT = 3500
 
 
-def _chunk_text(text: str, max_len: int = 3500) -> list[str]:
-    if len(text) <= max_len:
-        return [text]
-
-    chunks: list[str] = []
-    paragraphs = text.split("\n\n")
-    for paragraph in paragraphs:
-        if not paragraph:
-            continue
-        if len(paragraph) <= max_len:
-            if chunks and len(chunks[-1]) + 2 + len(paragraph) <= max_len:
-                chunks[-1] += f"\n\n{paragraph}"
-            else:
-                chunks.append(paragraph)
-            continue
-
-        start = 0
-        while start < len(paragraph):
-            chunks.append(paragraph[start : start + max_len])
-            start += max_len
-
-    return chunks
-
-
 def _guess_mime_type(file_path: Path, fallback: str | None) -> str:
     """Pick the best mime type we can, based on suffix or metadata."""
 
@@ -71,7 +47,6 @@ async def media_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if message is None:
         return
 
-    is_voice = message.voice is not None
     audio = message.voice or message.audio
     if audio is None:
         return
@@ -82,6 +57,7 @@ async def media_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await message.reply_text("Доступ к боту ограничен.")
         return
 
+    local_path: Path | None = None
     try:
         telegram_file = await context.bot.get_file(audio.file_id)
         suffix = Path(telegram_file.file_path or "").suffix or ".ogg"
@@ -101,6 +77,12 @@ async def media_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     except Exception as exc:
         logger.exception("Failed to process audio: %s", exc)
+        # Remove the downloaded file so failed runs don't fill up the disk.
+        if local_path is not None:
+            try:
+                local_path.unlink(missing_ok=True)
+            except OSError:
+                logger.warning("Failed to remove temp file: %s", local_path)
         await message.reply_text(
             "Не удалось обработать аудио. Попробуй ещё раз чуть позже."
         )
@@ -123,6 +105,15 @@ async def media_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     )
     context.user_data["last_note"] = note
 
+    # When a dialogue is active (/new), the transcript is added to it.
+    dialogue_note = ""
+    dialogue: list[str] | None = context.chat_data.get("dialogue")
+    if dialogue is not None:
+        dialogue.append(transcript)
+        dialogue_note = (
+            f"\n\nДобавлено в беседу (сообщений: {len(dialogue)}). /end — собрать конспект."
+        )
+
     is_long = len(transcript) > TELEGRAM_SAFE_LIMIT
     keyboard = build_save_keyboard(show_full=is_long)
 
@@ -131,8 +122,8 @@ async def media_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await message.reply_text(
             f"Текст длинный, показан фрагмент:\n\n{preview}"
         )
-        await message.reply_text("Что сделать дальше?", reply_markup=keyboard)
+        await message.reply_text(f"Что сделать дальше?{dialogue_note}", reply_markup=keyboard)
         return
 
     await message.reply_text(transcript)
-    await message.reply_text("Что сделать дальше?", reply_markup=keyboard)
+    await message.reply_text(f"Что сделать дальше?{dialogue_note}", reply_markup=keyboard)
