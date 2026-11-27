@@ -35,7 +35,7 @@ async def transcribe_file(file_path: Path, mime_type: str, api_key: str) -> str:
         "Content-Type": mime_type,
     }
     params = {
-        "model": "nova-2",
+        "model": "nova-3",
         "smart_format": "true",
         "language": "ru",
     }
