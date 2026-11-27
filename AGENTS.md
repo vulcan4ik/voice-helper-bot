@@ -1,157 +1,77 @@
-# AGENTS.md — Python Telegram Bot
+# AGENTS.md — voice-helper-bot
 
-## Project Overview
-This is a Python-based Telegram bot project. All AI agents and contributors must follow these rules strictly.
+> Единственная точка входа для агентов и контрибьюторов. Этот файл читается
+> автоматически (OpenCode, Codex, Cursor и др.). Меняешь структуру или правила — обнови его.
 
----
+## Что это за проект
 
-## Tech Stack
-- **Language:** Python 3.11+
-- **Bot Framework:** `python-telegram-bot` v20+ (async)
-- **Environment:** `python-dotenv` for secrets
-- **Linting:** `ruff` or `flake8`
-- **Testing:** `pytest` + `pytest-asyncio`
-- **Dependency management:** `pip` + `requirements.txt` or `poetry`
+Персональный Telegram-бот для голосовых заметок:
+- Голосовое/аудио -> транскрипция через Deepgram (nova-3, язык ru, диаризация спикеров)
+- Кнопки сохранения в Google Drive: текст TXT/MD, аудио + текст, папки по дате
+- Конспект бесед: /new -> голосовые -> /end — саммари через LLM (OpenAI-совместимый API)
+- Доступ ограничен одним пользователем (ADMIN_ID)
 
----
+## Стек (фактический)
 
-## Project Structure
+- Python 3.11+, python-telegram-bot v20+ (async)
+- Deepgram REST API напрямую через httpx
+- Google Drive API (google-api-python-client), OAuth или service account
+- LLM: OpenAI-совместимый chat completions через httpx (LLM_API_KEY / LLM_BASE_URL / LLM_MODEL)
+- Деплой: Docker Compose на VM Google Cloud
+
+## Структура
+
 ```
-project/
-├── bot/
-│   ├── __init__.py
-│   ├── main.py          # Entry point, Application setup
-│   ├── handlers/        # One file per handler group
-│   │   ├── __init__.py
-│   │   ├── start.py
-│   │   ├── commands.py
-│   │   └── callbacks.py
-│   ├── services/        # Business logic (no Telegram deps here)
-│   │   └── __init__.py
-│   ├── models/          # Data models / dataclasses
-│   │   └── __init__.py
-│   └── utils/           # Helper functions
-│       └── __init__.py
-├── tests/
-│   ├── test_handlers.py
-│   └── test_services.py
-├── .env                 # Never commit this
-├── .env.example
-├── requirements.txt
-├── AGENTS.md
-└── README.md
+bot/
+  main.py            # входная точка, регистрация хендлеров
+  handlers/          # один файл на группу: start, media, callbacks, dialogue
+  services/          # бизнес-логика без Telegram-зависимостей: deepgram, gdrive, llm, access
+  models/            # датаклассы (VoiceNote)
+  utils/             # конфиг, текстовые хелперы, клавиатуры
+docs/
+  PROJECT_CONTEXT.md # текущее состояние проекта — обновляй по итогам работы
+  TASKS.md           # задачи — закрывай сделанное, добавляй новое
+  DEV_RULES.md       # краткая выжимка правил (канон — здесь)
+conftest.py          # делает пакет bot импортируемым для pytest
 ```
 
----
+## Правила (обязательные)
 
-## Coding Rules
+- Код простой, без сложных паттернов; комментарии к важным шагам
+- Комментарии в коде — на английском, тексты для пользователя — на русском
+- logging вместо print
+- Секреты только через .env (см. .env.example); .env не коммитится
+- Handlers тонкие: логика живёт в services/
+- Блокирующие вызовы (Google API, файлы) — через asyncio.to_thread
+- Никаких секретов в конфиг-файлах (opencode.jsonc и т.п.) — только env-переменные
 
-### General
-- Use **async/await** everywhere — python-telegram-bot v20+ is fully async
-- Follow **PEP 8** and use type hints on all functions
-- Keep handlers thin — delegate logic to `services/`
-- Never hardcode secrets — always use `os.getenv()` or `.env`
-- All strings in English (code) or Russian (user-facing messages) — be consistent
+## Сессия агента (workflow)
 
-### Naming Conventions
-- Files: `snake_case.py`
-- Classes: `PascalCase`
-- Functions/variables: `snake_case`
-- Constants: `UPPER_SNAKE_CASE`
+Начало:
+1. Прочитай docs/PROJECT_CONTEXT.md и docs/TASKS.md
+2. Возьми задачу из TASKS.md (или добавь свою)
 
-### Handler Pattern
-```python
-async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /start command."""
-    user = update.effective_user
-    await update.message.reply_text(f"Привет, {user.first_name}!")
-```
+Конец:
+1. Обнови docs/PROJECT_CONTEXT.md по итогам работы
+2. Обнови docs/TASKS.md: закрой сделанное, добавь новое
 
-### Error Handling
-- Always wrap API calls in try/except
-- Use `ApplicationHandlerStop` to stop handler chains when needed
-- Log all errors with `logging` module, never use `print()`
+## Тесты и проверки
 
-```python
-import logging
-logger = logging.getLogger(__name__)
+- `python -m pytest tests/` — из корня проекта (conftest.py уже настроен)
+- `ruff check bot tests --select F,E9` — реальные ошибки, стиль вторичен
+- Новая логика в services/ -> тест в tests/
 
-try:
-    result = await some_api_call()
-except TelegramError as e:
-    logger.error(f"Telegram error: {e}")
-```
+## Git и деплой
 
----
+- Коммиты в императиве: "Add X", "Fix Y"
+- Разработка в ветке -> PR -> merge в main
+- Тег last-working — точка отката для VM
+- Деплой на VM: git pull + docker compose up -d --build (автодеплой — в планах, см. docs/TASKS.md)
 
-## Environment Variables
-```env
-BOT_TOKEN=your_bot_token_here
-ADMIN_ID=123456789
-DATABASE_URL=sqlite:///bot.db  # optional
-```
+## Запрещено
 
-Never commit `.env` — only `.env.example` goes to git.
-
----
-
-## Testing Rules
-- Write tests for all service functions
-- Mock Telegram objects using `python-telegram-bot` test utilities
-- Run tests before every commit: `pytest tests/`
-- Minimum coverage: 70%
-
----
-
-## Git Rules
-- Commit messages in imperative: `Add start handler`, `Fix callback bug`
-- One feature per branch
-- Never commit `.env`, `__pycache__`, `.pyc` files
-- Always run `ruff check .` before committing
-
----
-
-## Forbidden
-- ❌ No `time.sleep()` — use `asyncio.sleep()`
-- ❌ No blocking I/O in handlers — use async libraries
-- ❌ No hardcoded tokens or passwords
-- ❌ No business logic inside handler functions
-- ❌ No `print()` for debugging — use `logging`
-- ❌ No bare `except:` — always specify exception type
-
----
-
-## Recommended Libraries
-| Purpose | Library |
-|---------|---------|
-| Telegram API | `python-telegram-bot>=20.0` |
-| HTTP requests | `httpx` (async) |
-| Database | `aiosqlite` or `sqlalchemy[asyncio]` |
-| Validation | `pydantic` |
-| Scheduling | `APScheduler` |
-| Config | `python-dotenv` |
-
----
-
-## Running the Bot
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Copy and fill env
-cp .env.example .env
-
-# Run
-python -m bot.main
-```
-
----
-
-## Agent Instructions
-When implementing features:
-1. **Always check** if a handler for this command already exists
-2. **Add handler** in `bot/handlers/` — one file per logical group
-3. **Register handler** in `bot/main.py` in the Application setup
-4. **Write test** in `tests/` for any new service function
-5. **Update** `README.md` if adding new commands
-6. **Never modify** `.env` — only `.env.example`
+- print() вместо logging
+- time.sleep() в async-коде — только asyncio.sleep()
+- bare except:
+- секреты в коде или конфигах (opencode.jsonc и т.п.)
+- бизнес-логика в handlers/
