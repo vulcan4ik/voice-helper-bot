@@ -1,15 +1,11 @@
 # AI Context
 
-Основной контекст проекта:
-- docs/PROJECT_CONTEXT.md
-- docs/TASKS.md
-- docs/DEV_RULES.md
+Единственная точка входа — [AGENTS.md](AGENTS.md). Начни с него.
 
-Как начать сессию:
-- Используй AI_CONTEXT.md как основной контекст.
-- Текущая задача: <вставь из docs/TASKS.md>.
+Дальше по цепочке:
+- docs/PROJECT_CONTEXT.md — текущее состояние проекта
+- docs/TASKS.md — задачи (возьми текущую)
+- docs/DEV_RULES.md — краткая выжимка правил
 
-Как завершать сессию:
-- Обнови docs/PROJECT_CONTEXT.md по итогам работы.
-- Обнови docs/TASKS.md (закрыть сделанное, добавить новое).
-- Обнови docs/DEV_RULES.md, если появились новые правила.
+Как завершать сессию — описано в AGENTS.md, раздел «Сессия агента»:
+обнови PROJECT_CONTEXT.md и TASKS.md по итогам работы.
